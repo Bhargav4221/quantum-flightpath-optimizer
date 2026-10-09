@@ -1,36 +1,26 @@
 """Quantum FlightPath Optimizer - Live Public Sharing Utility.
 
-Starts a persistent public HTTPS tunnel so your team can access the application from any device.
+Starts a persistent Cloudflare public HTTPS tunnel so your team can access the application from any device without passwords or configuration.
 """
 
 import subprocess
-import urllib.request
-import time
+import os
 import sys
-
-def get_public_ip():
-    try:
-        return urllib.request.urlopen("https://api.ipify.org", timeout=5).read().decode().strip()
-    except Exception:
-        return "Check https://loca.lt/mytunnelpassword"
+import time
 
 def main():
-    print("=" * 60)
-    print("QUANTUM FLIGHTPATH OPTIMIZER - TEAM SHARING UTILITY")
-    print("=" * 60)
-    
-    ip = get_public_ip()
-    print(f"\nYour Host IP / Tunnel Password: {ip}")
-    print("\nStarting public HTTPS tunnel on port 5173...")
-    print("Share this link with your team:\n")
-    print("  👉 https://quantum-flightpath.loca.lt")
-    print(f"  🔑 Tunnel Password (if prompted): {ip}")
-    print("\nLocal Network (Same Wi-Fi):")
-    print("  👉 http://192.168.31.60:5173 (No password needed)\n")
-    print("=" * 60)
-    print("Press Ctrl+C to stop sharing.\n")
+    print("=" * 70)
+    print("QUANTUM FLIGHTPATH OPTIMIZER - CLOUDFLARE PUBLIC SHARING")
+    print("=" * 70)
+    print("\nStarting Cloudflare Tunnel on port 5173 with HTTP/2 protocol...")
+    print("This provides a direct, secure, zero-password public HTTPS URL.\n")
 
-    cmd = ["npx.cmd", "localtunnel", "--port", "5173", "--subdomain", "quantum-flightpath"]
+    exe_path = os.path.join(os.path.dirname(__file__), "cloudflared.exe")
+    if not os.path.exists(exe_path):
+        exe_path = "cloudflared"
+
+    cmd = [exe_path, "tunnel", "--protocol", "http2", "--url", "http://localhost:5173"]
+
     while True:
         try:
             proc = subprocess.Popen(cmd)

@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     
     # Server configuration
-    HOST: str = "127.0.0.1"
+    HOST: str = "0.0.0.0"
     PORT: int = 8000
     CORS_ORIGINS: list[str] = [
         "http://localhost:5173",

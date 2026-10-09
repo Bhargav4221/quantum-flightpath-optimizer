@@ -46,6 +46,10 @@ frontend/dist/
 frontend/dist-ssr/
 frontend/.wireit/
 
+# Executables
+*.exe
+cloudflared.exe
+
 # IDE & OS
 .vscode/
 .idea/
