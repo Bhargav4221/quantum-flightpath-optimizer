@@ -1,21 +1,35 @@
 # Quantum FlightPath Optimizer
-### Quantum-Assisted Aviation Route and Emissions Optimization
+
+**Quantum-Assisted Aviation Route and Emissions Optimization**
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![Qiskit 2.5](https://img.shields.io/badge/Qiskit-2.5-6929C4.svg)](https://qiskit.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg)](https://fastapi.tiangolo.com/)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB.svg)](https://react.dev/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-38B2AC.svg)](https://tailwindcss.com/)
-[![Tests](https://img.shields.io/badge/Tests-38%20Passed-emerald.svg)](https://pytest.org/)
+[![Tests](https://img.shields.io/badge/Tests-39%20Passed-emerald.svg)](https://pytest.org/)
 
 ---
 
-## 1. Project Title
-**Quantum FlightPath Optimizer: Quantum-Assisted Aviation Route and Emissions Optimization Decision-Support System**
+### 1. Novelty
+
+Quantum FlightPath Optimizer explores aviation route selection using validated aeronautical route data, quantum optimization, and environmental objectives. Unlike a distance-only approach, it considers distance, estimated fuel consumption, CO₂ emissions, flight time, and applicable route constraints. It visualizes candidate routes and transparently distinguishes published aviation information from computed recommendations.
+
+### 2. Level of Qiskit Programming
+
+The project formulates route selection as a Quadratic Unconstrained Binary Optimization (QUBO) problem, encoding route costs and feasibility constraints. Using Qiskit, it implements a quantum-compatible optimization workflow, solution decoding, and route validation. IBM Quantum supports hardware execution when configured, while Qiskit Aer enables local quantum circuit simulation.
+
+### 3. Measurable Results and Classical Benchmarking
+
+The project benchmarks quantum or quantum-hybrid solutions against classical algorithms such as Dijkstra or A*, using the same candidate routing problem wherever feasible. Evaluation metrics include objective value, route distance, estimated fuel, estimated CO₂, execution time, and solution validity. Improvements will be reported only when supported by actual experimental results.
+
+### 4. Technical Quantum Advantage
+
+The project investigates whether QUBO-based quantum optimization can effectively solve constrained, multi-objective route-selection problems. It measures solution quality, computational resources, execution time, and scalability against classical baselines. Quantum advantage is a research question, not an assumed outcome; any demonstrated benefit must be supported by reproducible benchmarks and account for hardware and simulation limitations.
 
 ---
 
-## 2. Project Overview
+## Executive Overview
 **Quantum FlightPath Optimizer** is a full-stack aeronautical research and decision-support web application that evaluates candidate commercial flight paths using authentic aeronautical data, classical graph algorithms, Quadratic Unconstrained Binary Optimization (QUBO) mathematical formulation, genuine Qiskit QAOA quantum circuits, and dual quantum backends (IBM Quantum hardware runtime and local Qiskit Aer simulation).
 
 The application enables aviation analysts, operational researchers, and route planners to evaluate candidate routes across multi-objective trade-offs: nautical distance, estimated fuel consumption, estimated $\text{CO}_2$ emissions, estimated flight time, and airspace traffic density. It maintains transparent data provenance across all published aviation information layers and presents an interactive geographic interface built on Leaflet.js and OpenStreetMap.
