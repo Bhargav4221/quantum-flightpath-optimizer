@@ -22,6 +22,19 @@ export async function getBackendStatus() {
   return res.json();
 }
 
+export async function configureIBMToken(token, instance = null) {
+  const res = await fetch(`${API_BASE}/backend/configure-token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, instance }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'IBM Quantum authentication failed');
+  }
+  return res.json();
+}
+
 export async function testQuantumBackend(mode = 'auto') {
   const res = await fetch(`${API_BASE}/quantum/test?backend_mode=${encodeURIComponent(mode)}`, {
     method: 'POST',

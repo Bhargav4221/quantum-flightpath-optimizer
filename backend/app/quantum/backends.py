@@ -94,31 +94,46 @@ class IBMQuantumBackend(QuantumBackendBase):
     """Genuine IBM Quantum Hardware / Runtime Backend."""
 
     def __init__(self, token: Optional[str] = None, instance: Optional[str] = None):
-        self.token = token or settings.IBM_QUANTUM_TOKEN
-        self.instance = instance or settings.IBM_QUANTUM_INSTANCE
+        self.token = token if token is not None else settings.IBM_QUANTUM_TOKEN
+        self.instance = instance if instance is not None else settings.IBM_QUANTUM_INSTANCE
         self.service = None
         self._connected = False
         self._backend = None
+        self._last_error = None
         self._init_service()
 
     def _init_service(self):
         if not self.token or len(self.token.strip()) < 10:
+            self._last_error = "IBM Quantum token not configured (set token in UI or server .env)."
             return
 
         try:
             from qiskit_ibm_runtime import QiskitRuntimeService
             self.service = QiskitRuntimeService(
                 channel="ibm_quantum",
-                token=self.token,
+                token=self.token.strip(),
                 instance=self.instance,
             )
             # Find least busy operational system
-            self._backend = self.service.least_busy(operational=True, simulator=False)
-            self._connected = True
-        except Exception:
+            try:
+                self._backend = self.service.least_busy(operational=True, simulator=False)
+            except Exception:
+                # If least_busy filter fails, find any available operational hardware backend
+                all_b = self.service.backends()
+                operational = [b for b in all_b if getattr(b, "status", lambda: None)()]
+                self._backend = operational[0] if operational else (all_b[0] if all_b else None)
+
+            if self._backend:
+                self._connected = True
+                self._last_error = None
+            else:
+                self._connected = False
+                self._last_error = "Authenticated with IBM Quantum, but no operational quantum hardware QPU was returned for this account."
+        except Exception as e:
             self._connected = False
             self.service = None
             self._backend = None
+            self._last_error = f"IBM Quantum authentication failed: {str(e)}"
 
     def get_name(self) -> str:
         if self._backend:
@@ -130,9 +145,9 @@ class IBMQuantumBackend(QuantumBackendBase):
 
     def is_available(self) -> Tuple[bool, Optional[str]]:
         if not self.token:
-            return False, "IBM Quantum token not configured (set IBM_QUANTUM_TOKEN in server .env)."
+            return False, "IBM Quantum token not configured. Please enter your API token."
         if not self.service or not self._connected or not self._backend:
-            return False, "Failed to authenticate or find operational IBM Quantum hardware backend."
+            return False, self._last_error or "Failed to authenticate or find operational IBM Quantum hardware backend."
         return True, None
 
     def execute_circuit(
@@ -266,3 +281,53 @@ class BackendFactory:
             if ibm_avail
             else "Qiskit Aer local simulation active. Configure IBM_QUANTUM_TOKEN to enable IBM Quantum hardware execution.",
         }
+
+    @staticmethod
+    def configure_ibm_token(token: str, instance: Optional[str] = None) -> Tuple[bool, str, Optional[str]]:
+        """Verify token against IBM Quantum and persist in server settings and .env.
+
+        Returns (success, message, backend_name).
+        """
+        token = token.strip()
+        if len(token) < 10:
+            return False, "Token is too short or invalid.", None
+
+        test_backend = IBMQuantumBackend(token=token, instance=instance)
+        avail, reason = test_backend.is_available()
+        if not avail:
+            return False, reason or "IBM Quantum authentication failed.", None
+
+        # Update in-memory settings
+        settings.IBM_QUANTUM_TOKEN = token
+        settings.IBM_QUANTUM_INSTANCE = instance
+
+        # Persist to .env file in project root
+        try:
+            env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env"))
+            lines = []
+            if os.path.exists(env_path):
+                with open(env_path, "r", encoding="utf-8") as f:
+                    lines = f.readlines()
+
+            token_written = False
+            new_lines = []
+            for line in lines:
+                if line.startswith("IBM_QUANTUM_TOKEN="):
+                    new_lines.append(f"IBM_QUANTUM_TOKEN={token}\n")
+                    token_written = True
+                elif line.startswith("IBM_QUANTUM_INSTANCE=") and instance:
+                    new_lines.append(f"IBM_QUANTUM_INSTANCE={instance}\n")
+                else:
+                    new_lines.append(line)
+            if not token_written:
+                new_lines.append(f"\nIBM_QUANTUM_TOKEN={token}\n")
+                if instance:
+                    new_lines.append(f"IBM_QUANTUM_INSTANCE={instance}\n")
+            with open(env_path, "w", encoding="utf-8") as f:
+                f.writelines(new_lines)
+        except Exception:
+            pass
+
+        backend_name = test_backend.get_name()
+        return True, f"Successfully authenticated with IBM Quantum! Connected to {backend_name}.", backend_name
+

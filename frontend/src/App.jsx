@@ -5,10 +5,9 @@ import {
   Plane,
   AlertCircle,
   Play,
-  RotateCcw,
   ShieldAlert,
   Sparkles,
-  ExternalLink,
+  Zap,
 } from 'lucide-react';
 
 import AirportSelector from './components/AirportSelector';
@@ -20,12 +19,10 @@ import MetricsCards from './components/MetricsCards';
 import QuantumCircuitStats from './components/QuantumCircuitStats';
 import RouteDetails from './components/RouteDetails';
 import RouteWarnings from './components/RouteWarnings';
-import DataProvenance from './components/DataProvenance';
 
 import {
   getAirport,
   getBackendStatus,
-  getDataProvenance,
   getAirwaysNetwork,
   getRestrictedAirspaces,
   optimizeRoute,
@@ -36,7 +33,7 @@ export default function App() {
   const [origin, setOrigin] = useState(null);
   const [destination, setDestination] = useState(null);
 
-  // Optimization settings
+  // Optimization settings - Defaulting primary focus to IBM Quantum Hardware
   const [objective, setObjective] = useState('balanced');
   const [weights, setWeights] = useState({
     distance: 20,
@@ -46,12 +43,11 @@ export default function App() {
     congestion: 10,
   });
   const [aircraftType, setAircraftType] = useState('A320neo');
-  const [backendMode, setBackendMode] = useState('auto');
+  const [backendMode, setBackendMode] = useState('ibm'); // Primary target: IBM Quantum
   const [shots, setShots] = useState(1024);
 
   // Data & execution state
   const [backendStatus, setBackendStatus] = useState(null);
-  const [dataProvenances, setDataProvenances] = useState([]);
   const [airwaysNetwork, setAirwaysNetwork] = useState(null);
   const [restrictedAirspaces, setRestrictedAirspaces] = useState([]);
 
@@ -64,11 +60,10 @@ export default function App() {
   useEffect(() => {
     const initApp = async () => {
       try {
-        const [delhiApt, hydApt, bStatus, provs, airways, restricted] = await Promise.all([
+        const [delhiApt, hydApt, bStatus, airways, restricted] = await Promise.all([
           getAirport('DEL'),
           getAirport('HYD'),
           getBackendStatus(),
-          getDataProvenance(),
           getAirwaysNetwork(),
           getRestrictedAirspaces(),
         ]);
@@ -76,7 +71,6 @@ export default function App() {
         setOrigin(delhiApt);
         setDestination(hydApt);
         setBackendStatus(bStatus);
-        setDataProvenances(provs);
         setAirwaysNetwork(airways);
         setRestrictedAirspaces(restricted);
       } catch (err) {
@@ -142,6 +136,8 @@ export default function App() {
     }
   };
 
+  const isIBMAvailable = backendStatus?.ibm_available;
+
   return (
     <div className="min-h-screen bg-[#080d1a] text-slate-100 flex flex-col font-sans">
       {/* TOP AVIONICS NAVIGATION BAR */}
@@ -159,7 +155,7 @@ export default function App() {
                   QUANTUM FLIGHTPATH OPTIMIZER
                 </h1>
                 <span className="px-1.5 py-0.5 text-[9px] font-mono bg-cyan-950 text-cyan-300 border border-cyan-700 rounded font-semibold">
-                  QISKIT 2.5
+                  IBM QISKIT
                 </span>
               </div>
               <p className="text-xs text-slate-400">
@@ -168,21 +164,20 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1 bg-slate-900 border border-slate-800 rounded-lg text-xs font-mono">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-slate-300">
-                {backendStatus?.active_backend_name || 'Qiskit Aer Ready'}
+          {/* RIGHT SIDE: IBM Quantum Target Badge (API Docs Link Removed) */}
+          <div className="flex items-center gap-2">
+            <div
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono border ${
+                isIBMAvailable
+                  ? 'bg-cyan-950/60 border-cyan-700 text-cyan-300'
+                  : 'bg-slate-900 border-slate-800 text-slate-300'
+              }`}
+            >
+              <Zap className={`w-3.5 h-3.5 ${isIBMAvailable ? 'text-cyan-400 animate-pulse' : 'text-amber-400'}`} />
+              <span>
+                Target: {isIBMAvailable ? backendStatus?.active_backend_name : 'IBM Quantum (Token Required)'}
               </span>
             </div>
-            <a
-              href="/docs"
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs text-slate-400 hover:text-cyan-400 flex items-center gap-1 transition-colors"
-            >
-              API Docs <ExternalLink className="w-3 h-3" />
-            </a>
           </div>
         </div>
       </header>
@@ -249,12 +244,14 @@ export default function App() {
               {loading ? (
                 <>
                   <Sparkles className="w-4 h-4 animate-spin" />
-                  <span>Formulating QUBO & Executing QAOA...</span>
+                  <span>Formulating QUBO & Submitting to Quantum Backend...</span>
                 </>
               ) : (
                 <>
                   <Play className="w-4 h-4 fill-current" />
-                  <span>OPTIMIZE ROUTE (Classical & Quantum)</span>
+                  <span>
+                    OPTIMIZE ROUTE ({backendMode === 'ibm' ? 'IBM Quantum Hardware' : backendMode.toUpperCase()})
+                  </span>
                 </>
               )}
             </button>
@@ -265,7 +262,7 @@ export default function App() {
         <section className="space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-400">
             <span className="font-semibold uppercase tracking-wider text-slate-300">
-              Interactive Aeronautical Map (OpenStreetMap & AAI Published Airway Network)
+              Interactive Aeronautical Map
             </span>
             <span>
               {origin && destination
@@ -322,11 +319,6 @@ export default function App() {
             />
           </section>
         )}
-
-        {/* AUTHORITATIVE DATA PROVENANCE REGISTRY */}
-        <section className="pt-4">
-          <DataProvenance provenances={dataProvenances} />
-        </section>
       </main>
 
       {/* FOOTER */}
@@ -336,7 +328,7 @@ export default function App() {
             Quantum FlightPath Optimizer • Research Decision-Support System
           </p>
           <p className="font-mono text-[11px]">
-            Powered by Qiskit & Qiskit Aer • Published ATS Airway Network
+            Targeting IBM Quantum Hardware QPUs & Qiskit Runtime
           </p>
         </div>
       </footer>

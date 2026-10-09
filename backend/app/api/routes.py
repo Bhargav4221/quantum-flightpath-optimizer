@@ -12,6 +12,8 @@ from app.models.schemas import (
     OptimizationResponse,
     OptimizationWeights,
     BackendStatusResponse,
+    ConfigureTokenRequest,
+    ConfigureTokenResponse,
     DataProvenance,
     RestrictedAirspace,
     AirwaySegment,
@@ -72,6 +74,26 @@ def get_backend_status():
     """Report actual quantum backend configuration and availability without exposing secrets."""
     overview = BackendFactory.get_status_overview()
     return BackendStatusResponse(**overview)
+
+
+@router.post("/backend/configure-token", response_model=ConfigureTokenResponse)
+def configure_token(request: ConfigureTokenRequest):
+    """Authenticate with IBM Quantum, verify token validity, and configure hardware runtime."""
+    success, message, backend_name = BackendFactory.configure_ibm_token(
+        token=request.token,
+        instance=request.instance,
+    )
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=message,
+        )
+    return ConfigureTokenResponse(
+        success=True,
+        backend_name=backend_name,
+        message=message,
+        backend_type="hardware",
+    )
 
 
 @router.post("/quantum/test")

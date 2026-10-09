@@ -192,7 +192,20 @@ class OptimizationResponse(BaseModel):
     error_message: Optional[str] = None
 
 
+class ConfigureTokenRequest(BaseModel):
+    token: str = Field(..., min_length=10, description="IBM Quantum API Token from quantum.ibm.com")
+    instance: Optional[str] = None
+
+
+class ConfigureTokenResponse(BaseModel):
+    success: bool
+    backend_name: Optional[str] = None
+    message: str
+    backend_type: str = "hardware"
+
+
 class BackendStatusResponse(BaseModel):
+
     configured_token_present: bool
     instance_configured: bool
     current_mode: str

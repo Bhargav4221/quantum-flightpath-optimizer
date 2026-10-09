@@ -117,3 +117,9 @@ def test_quantum_test_endpoint():
     assert data["success"] is True
     assert "counts" in data
     assert data["test_circuit_qubits"] == 2
+
+
+def test_configure_token_short_rejected():
+    res = client.post("/api/backend/configure-token", json={"token": "short"})
+    assert res.status_code == 422  # Pydantic min_length validation error
+
